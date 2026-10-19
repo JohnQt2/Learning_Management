@@ -1,0 +1,12 @@
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\bin\Debug\net10.0\LMS.Core.Infrastructure.deps.json
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\bin\Debug\net10.0\LMS.Core.Infrastructure.dll
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\bin\Debug\net10.0\LMS.Core.Infrastructure.pdb
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.csproj.AssemblyReference.cache
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.AssemblyInfoInputs.cache
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.AssemblyInfo.cs
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.csproj.CoreCompileInputs.cache
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.dll
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\refint\LMS.Core.Infrastructure.dll
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\LMS.Core.Infrastructure.pdb
+D:\anh_UIUX\LMS-AI\backend\LMS.Core.Infrastructure\obj\Debug\net10.0\ref\LMS.Core.Infrastructure.dll
