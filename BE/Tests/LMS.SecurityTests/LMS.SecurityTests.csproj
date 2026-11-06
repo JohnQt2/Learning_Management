@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../Services/Core/LMS.CoreApplicationServices/LMS.CoreApplicationServices.csproj" />
+    <ProjectReference Include="../../Services/Core/LMS.Core.Infrastructure/LMS.Core.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
