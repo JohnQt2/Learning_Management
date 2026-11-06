@@ -1,0 +1,13 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lms-ai-week11-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env or shell}
+    ports:
+      - "14333:1433"
+    volumes:
+      - lms_sql_data:/var/opt/mssql
+volumes:
+  lms_sql_data:
