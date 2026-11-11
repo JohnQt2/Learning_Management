@@ -6,9 +6,10 @@ using LMS.CoreApplicationServices.CourseModule.Abstracts;
 using LMS.CoreApplicationServices.MaterialModule.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using LMS.CoreApplicationServices.MaterialModule.Abstracts;
 
 namespace LMS.CoreApplicationServices.MaterialModule.Implements;
-public sealed class MaterialService
+public sealed class MaterialService : IMaterialService
 {
     private readonly LmsDbContext _db;
     private readonly IFileStorage _storage;
