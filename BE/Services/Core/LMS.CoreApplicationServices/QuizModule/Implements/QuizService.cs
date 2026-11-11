@@ -6,9 +6,12 @@ using LMS.CoreApplicationServices.QuestionModule.Dtos;
 using LMS.CoreApplicationServices.QuestionModule.Implements;
 using LMS.CoreApplicationServices.QuizModule.Dtos;
 using Microsoft.EntityFrameworkCore;
+using LMS.Constants;
+using LMS.CoreApplicationServices.QuizModule.Abstracts;
+using LMS.CoreApplicationServices.ResultModule.Implements;
 
 namespace LMS.CoreApplicationServices.QuizModule.Implements;
-public sealed class QuizService
+public sealed class QuizService : IQuizService
 {
     private readonly LmsDbContext _db;
     private readonly ICourseService _courses;
@@ -26,7 +29,7 @@ public sealed class QuizService
             throw new AppException(400, "Chọn tối đa 200 câu hỏi không trùng; Quiz phát hành cần ít nhất 1 câu");
         if (questionIds.Count == 0) return questionIds;
         var questions = await _db.Questions.AsNoTracking().Include(q => q.Options).Where(q => questionIds.Contains(q.Id)).ToListAsync(ct);
-        if (questions.Count != questionIds.Count || questions.Any(q => q.CourseId != courseId || q.Status != "Approved"))
+        if (questions.Count != questionIds.Count || questions.Any(q => q.CourseId != courseId || q.Status != QuestionStatus.Approved))
             throw new AppException(400, "Chỉ chọn câu hỏi Approved thuộc cùng Course");
         foreach (var q in questions)
             QuestionService.ValidateOptions(q.Content, q.Explanation, q.Options.Select(o => new OptionInput(o.Content, o.IsCorrect)).ToList());
@@ -36,7 +39,7 @@ public sealed class QuizService
     {
         await _courses.RequireMemberAsync(courseId, userId, role, ct);
         var query = _db.Quizzes.AsNoTracking().Where(x => x.CourseId == courseId);
-        if (role == "Student") query = query.Where(x => x.Status == "Published");
+        if (role == Roles.Student) query = query.Where(x => x.Status == QuizStatus.Published);
         return await query.OrderByDescending(x => x.Id).Select(x => new QuizDto(x.Id, x.CourseId, x.Title,
             x.Status, x.PublishedAt, x.Description, _db.QuizQuestions.Count(qq => qq.QuizId == x.Id))).ToListAsync(ct);
     }
@@ -65,7 +68,7 @@ public sealed class QuizService
         var quiz = await _db.Quizzes.Include(q => q.QuizQuestions).SingleOrDefaultAsync(q => q.Id == quizId, ct)
             ?? throw new AppException(404, "Không thấy Quiz");
         await _courses.RequireOwnerAsync(quiz.CourseId, lecturerId, ct);
-        if (quiz.Status != "Draft") throw new AppException(409, "Chỉ sửa Quiz Draft");
+        if (quiz.Status != QuizStatus.Draft) throw new AppException(409, "Chỉ sửa Quiz Draft");
         ValidateDetails(request.Title, request.Description);
         var ids = await ValidateQuestionIdsAsync(quiz.CourseId, request.QuestionIds ?? quiz.QuizQuestions.Select(q => q.QuestionId).ToList(), false, ct);
         quiz.Title = request.Title.Trim();
@@ -89,10 +92,10 @@ public sealed class QuizService
         var quiz = await _db.Quizzes.Include(q => q.QuizQuestions).SingleOrDefaultAsync(q => q.Id == quizId, ct)
             ?? throw new AppException(404, "Không thấy Quiz");
         await _courses.RequireOwnerAsync(quiz.CourseId, lecturerId, ct);
-        if (quiz.Status != "Draft") throw new AppException(409, "Quiz đã được publish");
+        if (quiz.Status != QuizStatus.Draft) throw new AppException(409, "Quiz đã được publish");
         var ids = await ValidateQuestionIdsAsync(quiz.CourseId, request.QuestionIds, true, ct);
         ReplaceQuestions(quiz, ids);
-        quiz.Status = "Published";
+        quiz.Status = QuizStatus.Published;
         quiz.Revision++;
         quiz.PublishedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
@@ -102,8 +105,8 @@ public sealed class QuizService
     {
         var quiz = await _db.Quizzes.AsNoTracking().Include(q => q.QuizQuestions).ThenInclude(qq => qq.Question).ThenInclude(q => q.Options)
             .SingleOrDefaultAsync(q => q.Id == quizId, ct);
-        if (quiz is null || quiz.Status != "Published") throw new AppException(404, "Quiz không khả dụng");
-        await _courses.RequireMemberAsync(quiz.CourseId, studentId, "Student", ct);
+        if (quiz is null || quiz.Status != QuizStatus.Published) throw new AppException(404, "Quiz không khả dụng");
+        await _courses.RequireMemberAsync(quiz.CourseId, studentId, Roles.Student, ct);
         if (quiz.QuizQuestions.Count == 0) throw new AppException(409, "Quiz chưa có câu hỏi hợp lệ");
         return quiz;
     }
@@ -135,14 +138,14 @@ public sealed class QuizService
             mapped.Add(new StudentAnswer { QuestionId = question.Id, SelectedOptionId = option.Id, IsCorrect = option.IsCorrect });
         }
         var correct = mapped.Count(a => a.IsCorrect);
-        var score = Math.Round((decimal)correct * 10m / mapped.Count, 2, MidpointRounding.AwayFromZero);
+        var score = Math.Round((decimal)correct * LearningRules.MaxScore / mapped.Count, 2, MidpointRounding.AwayFromZero);
         var attempt = new QuizAttempt { QuizId = quizId, StudentId = studentId, Score = score, StudentAnswers = mapped };
         var weakIds = mapped.GroupBy(a => questions[a.QuestionId].TopicId)
-            .Where(g => (double)g.Count(a => a.IsCorrect) / g.Count() < 0.60).Select(g => g.Key).ToList();
+            .Where(g => RecommendationPolicy.IsWeak(g.Count(a => a.IsCorrect), g.Count())).Select(g => g.Key).ToList();
         var candidates = await _db.LearningMaterials.AsNoTracking()
             .Where(m => !m.IsDeleted && m.CourseId == quiz.CourseId && weakIds.Contains(m.TopicId)).OrderBy(m => m.Id)
             .Select(m => new { m.Id, m.TopicId }).ToListAsync(ct);
-        var recommendations = candidates.GroupBy(m => m.TopicId).SelectMany(g => g.Take(2))
+        var recommendations = candidates.GroupBy(m => m.TopicId).SelectMany(g => g.Take(RecommendationPolicy.MaxMaterialsPerTopic))
             .Select(m => new MaterialRecommendation { Attempt = attempt, MaterialId = m.Id, TopicId = m.TopicId }).ToList();
         // EF commits the entire graph in one transaction. The unique (QuizId, StudentId) index is the final race guard.
         _db.QuizAttempts.Add(attempt);
