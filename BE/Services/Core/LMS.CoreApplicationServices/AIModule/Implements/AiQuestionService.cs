@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
+using LMS.Constants;
 using LMS.Core.Domain.Entities;
 using LMS.Core.Infrastructure.Adapters;
 using LMS.Core.Infrastructure.Persistence;
+using LMS.CoreApplicationServices.AIModule.Abstracts;
 using LMS.CoreApplicationServices.AIModule.Dtos;
 using LMS.CoreApplicationServices.Common;
 using LMS.CoreApplicationServices.CourseModule.Abstracts;
@@ -13,7 +15,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LMS.CoreApplicationServices.AIModule.Implements;
 
-public sealed class AiQuestionService
+public sealed class AiQuestionService : IAiQuestionService
 {
     private readonly LmsDbContext _db;
     private readonly IAIClient _client;
@@ -55,7 +57,7 @@ public sealed class AiQuestionService
                     questions.Add(new Question
                     {
                         CourseId = material.CourseId, TopicId = material.TopicId, MaterialId = material.Id,
-                        Content = row.Content.Trim(), Explanation = row.Explanation, Source = "AI", Status = "Draft",
+                        Content = row.Content.Trim(), Explanation = row.Explanation, Source = QuestionSource.AI, Status = QuestionStatus.Draft,
                         Difficulty = request.Difficulty, SourceChunkIndex = chunk.Index,
                         SourceStartCharacter = chunk.StartCharacter, SourceEndCharacter = chunk.EndCharacter,
                         Options = row.Options.Select(o => new AnswerOption { Content = o.Content, IsCorrect = o.IsCorrect }).ToList()
