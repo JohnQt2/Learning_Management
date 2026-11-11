@@ -5,6 +5,7 @@ using LMS.CoreApplicationServices.AuthenticationModule.Dtos;
 using LMS.CoreApplicationServices.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using LMS.Constants;
 
 namespace LMS.CoreApplicationServices.AuthenticationModule.Implements;
 public sealed class AuthService : IAuthService
@@ -31,7 +32,7 @@ public sealed class AuthService : IAuthService
         if (password.Length < 8 || password.Length > 128) throw new AppException(400, "Mật khẩu cần từ 8 đến 128 ký tự");
         if (await _db.Users.AnyAsync(u => u.Username == username, ct)) throw new AppException(409, "Tên đăng nhập đã tồn tại");
         var email = ProfileValidation.NormalizeEmail(request.Email);
-        var user = new User { Username = username, FullName = name, Role = "Student", Email = email };
+        var user = new User { Username = username, FullName = name, Role = Roles.Student, Email = email };
         user.PasswordHash = _hasher.HashPassword(user, password);
         _db.Users.Add(user);
         try { await _db.SaveChangesAsync(ct); }
@@ -46,10 +47,10 @@ public sealed class AuthService : IAuthService
     public async Task<AccountProfileDto> ProfileAsync(int userId, CancellationToken ct)
     {
         var user = await RequireActiveUserAsync(userId, ct);
-        var courses = user.Role == "Lecturer"
+        var courses = user.Role == Roles.Lecturer
             ? await _db.Courses.AsNoTracking().Where(c => c.LecturerId == userId).OrderBy(c => c.Title).ThenBy(c => c.Id)
                 .Select(c => new ProfileCourseDto(c.Id, c.Code, c.Title, "Teaching", null)).ToListAsync(ct)
-            : user.Role == "Student"
+            : user.Role == Roles.Student
                 ? await _db.Enrollments.AsNoTracking().Where(e => e.StudentId == userId).OrderBy(e => e.Course.Title).ThenBy(e => e.CourseId)
                     .Select(e => new ProfileCourseDto(e.CourseId, e.Course.Code, e.Course.Title, "Enrolled", e.EnrolledAt)).ToListAsync(ct)
                 : [];
@@ -84,6 +85,14 @@ public sealed class AuthService : IAuthService
         await SaveAccountChangeAsync(ct);
     }
 
+    public async Task<bool> IsSessionValidAsync(int userId, string? role, int securityVersion, CancellationToken ct)
+    {
+        // Token chỉ còn hiệu lực khi tài khoản còn tồn tại, chưa bị khóa, vai trò không đổi
+        // và SecurityVersion chưa tăng (đăng xuất, đổi mật khẩu, khóa hoặc đặt lại mật khẩu đều tăng giá trị này).
+        var account = await _db.Users.AsNoTracking().Where(u => u.Id == userId)
+            .Select(u => new { u.Role, u.IsLocked, u.SecurityVersion }).SingleOrDefaultAsync(ct);
+        return account is not null && !account.IsLocked && account.Role == role && account.SecurityVersion == securityVersion;
+    }
     public async Task LogoutAsync(int userId, CancellationToken ct)
     {
         var user = await RequireActiveUserAsync(userId, ct);

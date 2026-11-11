@@ -1,6 +1,7 @@
 using LMS.Core.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using LMS.Constants;
 
 namespace LMS.Core.Infrastructure.Persistence;
 
@@ -13,9 +14,9 @@ public static class DemoSeeder
         var hasher = new PasswordHasher<User>();
         foreach (var (username, role, name) in new[]
         {
-            ("lecturer", "Lecturer", "Giảng viên Development"),
-            ("student", "Student", "Sinh viên Development"),
-            ("admin", "Admin", "Quản trị Development")
+            ("lecturer", Roles.Lecturer, "Giảng viên Development"),
+            ("student", Roles.Student, "Sinh viên Development"),
+            ("admin", Roles.Admin, "Quản trị Development")
         })
         {
             var user = new User { Username = username, Role = role, FullName = name };
@@ -35,10 +36,10 @@ public static class DemoSeeder
         if (string.IsNullOrWhiteSpace(fullName) || fullName.Length > 150)
             throw new InvalidOperationException("Bootstrap:AdminFullName must have 1-150 characters.");
         // Never promote or overwrite an existing account; provisioning only creates the first admin.
-        if (await db.Users.AnyAsync(u => u.Role == "Admin", ct)) return;
+        if (await db.Users.AnyAsync(u => u.Role == Roles.Admin, ct)) return;
         if (await db.Users.AnyAsync(u => u.Username == username, ct))
             throw new InvalidOperationException("Bootstrap admin username is already in use; no account was changed.");
-        var user = new User { Username = username, Role = "Admin", FullName = fullName.Trim() };
+        var user = new User { Username = username, Role = Roles.Admin, FullName = fullName.Trim() };
         user.PasswordHash = new PasswordHasher<User>().HashPassword(user, password);
         db.Users.Add(user);
         await db.SaveChangesAsync(ct);
