@@ -1,0 +1,8 @@
+Kiến trúc N-Tier phân chia ứng dụng thành nhiều tầng trách nhiệm rõ ràng.
+Controller nhận yêu cầu HTTP và gọi Application Service để xử lý nghiệp vụ.
+Domain chứa Entity và quy tắc dữ liệu cơ bản của hệ thống.
+Infrastructure sử dụng Entity Framework Core để truy cập cơ sở dữ liệu SQL Server.
+Trong LMS-AI, chỉ giảng viên sở hữu khóa học được duyệt câu hỏi và phát hành Quiz.
+Sinh viên tham gia khóa học bằng JoinCode do giảng viên cung cấp.
+Điểm Quiz được chấm tại máy chủ dựa trên dữ liệu AnswerOption.
+Câu hỏi AI sinh ra ở trạng thái Draft và cần giảng viên duyệt thành Approved.

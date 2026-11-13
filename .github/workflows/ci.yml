@@ -1,0 +1,44 @@
+name: LMS-AI build and smoke
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [develop, main]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore / build
+        run: dotnet build BE/LMS.sln -c Release
+      - name: Application smoke tests (SQLite in-memory + business flow)
+        run: dotnet run --project BE/Tests/LMS.SmokeTests -c Release --no-restore
+      - name: Security and Gemini transport fixture tests
+        run: dotnet run --project BE/Tests/LMS.SecurityTests -c Release --no-restore
+      - name: HTTP integration tests and persistent SQLite restart
+        run: dotnet run --project BE/Tests/LMS.IntegrationTests -c Release --no-restore
+      - name: Production guards, bootstrapping and rate limits
+        run: dotnet run --project BE/Tests/LMS.HostingTests -c Release --no-restore
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Legacy SQLite schema, backup and data preservation
+        run: python -m unittest discover -s scripts -p "test_*.py" -v
+      - name: Real EF migrations on isolated legacy fixture
+        run: python scripts/verify_legacy_upgrade.py --configuration Release
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - working-directory: FE
+        run: npm ci --no-audit --no-fund
+      - working-directory: FE
+        run: npm test
+      - working-directory: FE
+        run: npm run build
