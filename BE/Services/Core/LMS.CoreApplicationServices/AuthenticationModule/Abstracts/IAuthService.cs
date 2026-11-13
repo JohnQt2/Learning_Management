@@ -9,4 +9,6 @@ public interface IAuthService
     Task<AccountProfileDto> UpdateProfileAsync(int userId, UpdateProfileRequest request, CancellationToken ct);
     Task ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken ct);
     Task LogoutAsync(int userId, CancellationToken ct);
+    /// <summary>Kiểm tra JWT còn hợp lệ theo trạng thái tài khoản hiện tại (gọi khi xác thực mỗi request).</summary>
+    Task<bool> IsSessionValidAsync(int userId, string? role, int securityVersion, CancellationToken ct);
 }
