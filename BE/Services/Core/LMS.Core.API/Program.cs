@@ -6,16 +6,6 @@ using System.Net;
 using LMS.Core.Domain.Entities;
 using LMS.Core.Infrastructure.Adapters;
 using LMS.Core.Infrastructure.Persistence;
-using LMS.CoreApplicationServices.AdminModule.Implements;
-using LMS.CoreApplicationServices.AIModule.Implements;
-using LMS.CoreApplicationServices.AuthenticationModule.Abstracts;
-using LMS.CoreApplicationServices.AuthenticationModule.Implements;
-using LMS.CoreApplicationServices.CourseModule.Abstracts;
-using LMS.CoreApplicationServices.CourseModule.Implements;
-using LMS.CoreApplicationServices.MaterialModule.Implements;
-using LMS.CoreApplicationServices.QuestionModule.Implements;
-using LMS.CoreApplicationServices.QuizModule.Implements;
-using LMS.CoreApplicationServices.ResultModule.Implements;
 using LMS.Core.API.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -26,6 +16,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.Sqlite;
 using LMS.Core.API.Configuration;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddLocalDotEnv();
@@ -42,7 +33,21 @@ var maxUploadRequestBytes = storageOptions.MaxUploadBytes + 65_536;
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = maxUploadRequestBytes);
 builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = maxUploadRequestBytes);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Nút Authorize trên Swagger UI: dán accessToken nhận từ POST /api/auth/login để thử các API cần đăng nhập.
+    options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT trả về từ POST /api/auth/login"
+    });
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("bearer", document)] = []
+    });
+});
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? (builder.Environment.IsDevelopment()
         ? new[] { "http://localhost:5173", "http://127.0.0.1:5173" }
@@ -134,14 +139,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<MaterialService>();
-builder.Services.AddScoped<QuestionService>();
-builder.Services.AddScoped<AiQuestionService>();
-builder.Services.AddScoped<QuizService>();
-builder.Services.AddScoped<ResultService>();
-builder.Services.AddScoped<AdminService>();
+// Service nghiệp vụ: mỗi module đăng ký theo lớp và theo interface I*Service (xem Configuration/ServiceRegistration.cs).
+builder.Services.AddLmsApplicationServices();
 var storageRoot = builder.Configuration["Storage:RootPath"] ?? "Uploads";
 builder.Services.AddSingleton<IFileStorage>(_ => new LocalFileStorage(Path.GetFullPath(storageRoot, builder.Environment.ContentRootPath), storageOptions));
 // Real AI is opt-in; all manual LMS functionality works with no external service.
