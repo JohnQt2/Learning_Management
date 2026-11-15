@@ -1,3 +1,5 @@
+using LMS.Constants;
+
 namespace LMS.Core.Domain.Entities;
 
 public sealed class User
@@ -8,7 +10,7 @@ public sealed class User
     public string? Email { get; set; }
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     public string PasswordHash { get; set; } = "";
-    public string Role { get; set; } = "Student";
+    public string Role { get; set; } = Roles.Student;
     public bool IsLocked { get; set; }
     public int SecurityVersion { get; set; }
 }
@@ -70,12 +72,12 @@ public sealed class Question
     public LearningMaterial? Material { get; set; }
     public string Content { get; set; } = "";
     public string Explanation { get; set; } = "";
-    public string Source { get; set; } = "Manual";
+    public string Source { get; set; } = QuestionSource.Manual;
     public string? Difficulty { get; set; }
     public int? SourceChunkIndex { get; set; }
     public int? SourceStartCharacter { get; set; }
     public int? SourceEndCharacter { get; set; }
-    public string Status { get; set; } = "Draft";
+    public string Status { get; set; } = QuestionStatus.Draft;
     public List<AnswerOption> Options { get; set; } = new();
 }
 public sealed class AnswerOption
@@ -94,7 +96,7 @@ public sealed class Quiz
     public Course Course { get; set; } = null!;
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
-    public string Status { get; set; } = "Draft";
+    public string Status { get; set; } = QuizStatus.Draft;
     public DateTime? PublishedAt { get; set; }
     public List<QuizQuestion> QuizQuestions { get; set; } = new();
 }
@@ -112,7 +114,7 @@ public sealed class QuizAttempt
     public Quiz Quiz { get; set; } = null!;
     public int StudentId { get; set; }
     public User Student { get; set; } = null!;
-    public string Status { get; set; } = "Submitted";
+    public string Status { get; set; } = AttemptStatus.Submitted;
     public decimal Score { get; set; }
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
     public List<StudentAnswer> StudentAnswers { get; set; } = new();
