@@ -6,6 +6,7 @@
     <UserSecretsId>lms-ai-core-local</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../LMS.Constants/LMS.Constants.csproj" />
     <ProjectReference Include="../LMS.CoreApplicationServices/LMS.CoreApplicationServices.csproj" />
     <ProjectReference Include="../LMS.Core.Infrastructure/LMS.Core.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
