@@ -1,15 +1,16 @@
 using LMS.CoreApplicationServices.QuestionModule.Dtos;
-using LMS.CoreApplicationServices.QuestionModule.Implements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LMS.Constants;
+using LMS.CoreApplicationServices.QuestionModule.Abstracts;
 
 namespace LMS.Core.API.Controllers;
 [ApiController]
-[Authorize(Roles = "Lecturer")]
+[Authorize(Roles = Roles.Lecturer)]
 public sealed class QuestionsController : ControllerBase
 {
-    private readonly QuestionService _questions;
-    public QuestionsController(QuestionService questions) => _questions = questions;
+    private readonly IQuestionService _questions;
+    public QuestionsController(IQuestionService questions) => _questions = questions;
     [HttpGet("api/courses/{courseId:int}/questions")]
     public async Task<IActionResult> List(int courseId, CancellationToken ct)
         => Ok(await _questions.ListAsync(courseId, CurrentUser.Id(User), ct));

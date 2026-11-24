@@ -4,9 +4,11 @@ using LMS.CoreApplicationServices.Common;
 using LMS.CoreApplicationServices.CourseModule.Abstracts;
 using LMS.CoreApplicationServices.QuestionModule.Dtos;
 using Microsoft.EntityFrameworkCore;
+using LMS.Constants;
+using LMS.CoreApplicationServices.QuestionModule.Abstracts;
 
 namespace LMS.CoreApplicationServices.QuestionModule.Implements;
-public sealed class QuestionService
+public sealed class QuestionService : IQuestionService
 {
     private readonly LmsDbContext _db;
     private readonly ICourseService _courses;
@@ -42,7 +44,7 @@ public sealed class QuestionService
         {
             CourseId = request.CourseId, TopicId = request.TopicId,
             Content = request.Content.Trim(), Explanation = request.Explanation?.Trim() ?? "",
-            Source = "Manual", Status = "Draft", Difficulty = ValidateDifficulty(request.Difficulty),
+            Source = QuestionSource.Manual, Status = QuestionStatus.Draft, Difficulty = ValidateDifficulty(request.Difficulty),
             Options = request.Options.Select(o => new AnswerOption { Content = o.Content.Trim(), IsCorrect = o.IsCorrect }).ToList()
         };
         _db.Questions.Add(q);
@@ -53,7 +55,7 @@ public sealed class QuestionService
     {
         var q = await _db.Questions.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new AppException(404, "Không tìm thấy câu hỏi");
         await _courses.RequireOwnerAsync(q.CourseId, lecturerId, ct);
-        if (q.Status != "Draft") throw new AppException(409, "Chỉ chỉnh sửa Question Draft");
+        if (q.Status != QuestionStatus.Draft) throw new AppException(409, "Chỉ chỉnh sửa Question Draft");
         if (await _db.QuizQuestions.AnyAsync(qq => qq.QuestionId == id, ct) || await _db.StudentAnswers.AnyAsync(a => a.QuestionId == id, ct))
             throw new AppException(409, "Không sửa câu hỏi đã dùng trong Quiz; hãy tạo câu hỏi mới");
         ValidateOptions(request.Content, request.Explanation, request.Options);
@@ -70,9 +72,9 @@ public sealed class QuestionService
     {
         var q = await _db.Questions.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new AppException(404, "Không tìm thấy câu hỏi");
         await _courses.RequireOwnerAsync(q.CourseId, lecturerId, ct);
-        if (q.Status != "Draft") throw new AppException(409, "Question đã duyệt hoặc không còn Draft");
+        if (q.Status != QuestionStatus.Draft) throw new AppException(409, "Question đã duyệt hoặc không còn Draft");
         ValidateOptions(q.Content, q.Explanation, q.Options.Select(o => new OptionInput(o.Content, o.IsCorrect)).ToList());
-        q.Status = "Approved"; await _db.SaveChangesAsync(ct);
+        q.Status = QuestionStatus.Approved; await _db.SaveChangesAsync(ct);
         return Map(q);
     }
 }

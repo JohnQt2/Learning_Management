@@ -1,6 +1,7 @@
-using LMS.CoreApplicationServices.MaterialModule.Implements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LMS.Constants;
+using LMS.CoreApplicationServices.MaterialModule.Abstracts;
 namespace LMS.Core.API.Controllers;
 
 [ApiController]
@@ -8,8 +9,8 @@ namespace LMS.Core.API.Controllers;
 [Authorize]
 public sealed class MaterialsController : ControllerBase
 {
-    private readonly MaterialService _service;
-    public MaterialsController(MaterialService service) => _service = service;
+    private readonly IMaterialService _service;
+    public MaterialsController(IMaterialService service) => _service = service;
     [HttpGet]
     public async Task<IActionResult> List(int courseId, CancellationToken ct)
         => Ok(await _service.ListAsync(courseId, CurrentUser.Id(User), CurrentUser.Role(User), ct));
@@ -20,14 +21,14 @@ public sealed class MaterialsController : ControllerBase
     public async Task<IActionResult> ExtractedText(int id, CancellationToken ct)
         => Ok(await _service.ExtractedTextAsync(id, CurrentUser.Id(User), CurrentUser.Role(User), ct));
     [HttpDelete("/api/materials/{id:int}")]
-    [Authorize(Roles = "Lecturer")]
+    [Authorize(Roles = Roles.Lecturer)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, CurrentUser.Id(User), ct);
         return NoContent();
     }
     [HttpPost("/api/materials/{id:int}/extract")]
-    [Authorize(Roles = "Lecturer")]
+    [Authorize(Roles = Roles.Lecturer)]
     public async Task<IActionResult> Reextract(int id, CancellationToken ct)
         => Ok(await _service.ReextractAsync(id, CurrentUser.Id(User), ct));
     [HttpGet("/api/materials/{id:int}/download")]
@@ -37,7 +38,7 @@ public sealed class MaterialsController : ControllerBase
         return File(file.Stream, file.ContentType, file.Name);
     }
     [HttpPost]
-    [Authorize(Roles = "Lecturer")]
+    [Authorize(Roles = Roles.Lecturer)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload(int courseId, IFormFile file, [FromForm] int topicId, CancellationToken ct)
     {
