@@ -4,16 +4,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LMS.Core.Infrastructure.Adapters;
 using Microsoft.AspNetCore.RateLimiting;
+using LMS.Constants;
+using LMS.CoreApplicationServices.AIModule.Abstracts;
 namespace LMS.Core.API.Controllers;
 [ApiController]
 [Route("api/ai/questions")]
-[Authorize(Roles = "Lecturer")]
+[Authorize(Roles = Roles.Lecturer)]
 public sealed class AiQuestionsController : ControllerBase
 {
-    private readonly AiQuestionService _service;
+    private readonly IAiQuestionService _service;
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _environment;
-    public AiQuestionsController(AiQuestionService service, IConfiguration configuration, IWebHostEnvironment environment)
+    public AiQuestionsController(IAiQuestionService service, IConfiguration configuration, IWebHostEnvironment environment)
     {
         _service = service; _configuration = configuration; _environment = environment;
     }

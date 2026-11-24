@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../LMS.Constants/LMS.Constants.csproj" />
     <ProjectReference Include="../LMS.Core.Domain/LMS.Core.Domain.csproj" />
     <ProjectReference Include="../LMS.Core.Infrastructure/LMS.Core.Infrastructure.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
